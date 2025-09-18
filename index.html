@@ -1,1 +1,864 @@
-Hello World
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Casa Villa La Angostura - Compartido</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #e9ecef;
+            padding: 0;
+            margin: 0;
+        }
+
+        .header {
+            background: #4a5568;
+            color: white;
+            padding: 20px 15px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.4em;
+            margin: 0;
+        }
+
+        .sync-status {
+            display: none;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            min-height: 60px;
+        }
+
+        .btn {
+            background: #4a5568;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            touch-action: manipulation;
+            min-width: 60px;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:active {
+            opacity: 0.8;
+            transform: scale(0.95);
+        }
+
+        .month-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            text-align: center;
+            flex: 1;
+            margin: 0 15px;
+        }
+
+        .calendar {
+            background: white;
+            padding: 15px;
+        }
+
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            margin-bottom: 15px;
+            gap: 5px;
+        }
+
+        .weekday {
+            font-size: 13px;
+            font-weight: bold;
+            color: #666;
+            padding: 8px 5px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+
+        .day {
+            aspect-ratio: 1;
+            border: 2px solid #e9ecef;
+            padding: 8px;
+            font-size: 14px;
+            background: white;
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            min-height: 50px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.2s ease;
+        }
+
+        .day:active {
+            transform: scale(0.95);
+        }
+
+        .day.today {
+            background: #fff3cd;
+            border-color: #ffc107;
+            box-shadow: 0 2px 8px rgba(255,193,7,0.3);
+        }
+
+        .day.has-reservation {
+            background: #e8d5ff;
+            border-color: #9333ea;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(147,51,234,0.2);
+        }
+
+        .day.has-reservation:active {
+            background: #ddd6fe;
+        }
+
+        .day-number {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .res-indicator {
+            position: absolute;
+            bottom: 3px;
+            left: 3px;
+            right: 3px;
+            background: #4a5568;
+            color: white;
+            font-size: 10px;
+            padding: 2px;
+            text-align: center;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .add-button {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            width: 65px;
+            height: 65px;
+            background: #4a5568;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 32px;
+            font-weight: bold;
+            box-shadow: 0 6px 20px rgba(74,85,104,0.4);
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        .add-button:active {
+            transform: scale(0.9);
+            box-shadow: 0 4px 15px rgba(74,85,104,0.6);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+        }
+
+        .modal.show {
+            display: block;
+        }
+
+        .modal-content {
+            background: white;
+            margin: 30px 15px;
+            padding: 25px;
+            border-radius: 15px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .modal h2 {
+            margin-bottom: 25px;
+            font-size: 1.4em;
+            text-align: center;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 18px;
+            background: #f8f9fa;
+            transition: all 0.2s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #4a5568;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(74,85,104,0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .button-group button {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            min-height: 50px;
+            transition: all 0.2s ease;
+        }
+
+        .button-group button:active {
+            transform: scale(0.95);
+        }
+
+        .btn-save {
+            background: #4a5568;
+            color: white;
+        }
+
+        .btn-cancel {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .btn-delete {
+            background: #ef4444;
+            color: white;
+        }
+
+        .reservations {
+            background: white;
+            margin: 15px;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .reservations h3 {
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sync-indicator {
+            font-size: 12px;
+            color: #28a745;
+            font-weight: normal;
+        }
+
+        .reservation-item {
+            padding: 15px;
+            background: #f8f9fa;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+        }
+
+        .reservation-item:active {
+            background: #e9ecef;
+            border-color: #4a5568;
+            transform: scale(0.98);
+        }
+
+        .reservation-content {
+            flex: 1;
+        }
+
+        .reservation-name {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .reservation-dates {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .no-reservations {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            padding: 30px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏔️ Casa Villa La Angostura</h1>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="changeMonth(-1)">←</button>
+        <div class="month-title" id="monthTitle">Mes Año</div>
+        <button class="btn" onclick="changeMonth(1)">→</button>
+    </div>
+
+    <div class="calendar">
+        <div class="weekdays">
+            <div class="weekday">Dom</div>
+            <div class="weekday">Lun</div>
+            <div class="weekday">Mar</div>
+            <div class="weekday">Mié</div>
+            <div class="weekday">Jue</div>
+            <div class="weekday">Vie</div>
+            <div class="weekday">Sáb</div>
+        </div>
+        <div class="days" id="calendarDays"></div>
+    </div>
+
+    <div class="reservations">
+        <h3>
+            Próximas Reservas 
+            <span class="sync-indicator" id="syncIndicator">🔄 Auto-Sync</span>
+        </h3>
+        <div id="reservationList"></div>
+    </div>
+
+    <button class="add-button" onclick="openNewModal()">+</button>
+
+    <!-- Modal de reserva -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Nueva Reserva</h2>
+            
+            <div class="input-group">
+                <label>Nombre:</label>
+                <input type="text" id="inputName" autocomplete="off">
+            </div>
+            
+            <div class="input-group">
+                <label>Desde:</label>
+                <input type="date" id="inputStart">
+            </div>
+            
+            <div class="input-group">
+                <label>Hasta:</label>
+                <input type="date" id="inputEnd">
+            </div>
+            
+            <div class="button-group">
+                <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+                <button class="btn-delete" id="deleteBtn" onclick="deleteReservation()" style="display:none">Eliminar</button>
+                <button class="btn-save" onclick="saveReservation()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let currentDate = new Date();
+        let reservations = [];
+        let editingId = null;
+        let calendarId = null;
+        let lastSync = 0;
+
+        const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+        // Inicializar al cargar
+        window.onload = function() {
+            initSharedCalendar();
+            renderCalendar();
+            
+            // Sincronizar automáticamente cada 5 segundos
+            setInterval(autoSync, 5000);
+            
+            // Sincronizar cuando vuelve a la pestaña
+            window.addEventListener('focus', autoSync);
+            window.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    autoSync();
+                }
+            });
+        };
+
+        // Inicializar calendario compartido automático
+        async function initSharedCalendar() {
+            // Verificar si hay datos en la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const sharedData = urlParams.get('data');
+            
+            if (sharedData) {
+                try {
+                    // Cargar datos desde URL compartida
+                    const decoded = atob(sharedData);
+                    const data = JSON.parse(decoded);
+                    
+                    calendarId = data.id;
+                    reservations = data.reservations || [];
+                    
+                    localStorage.setItem('villa_calendar_id', calendarId);
+                    localStorage.setItem('villa_data_' + calendarId, JSON.stringify(data));
+                    
+                    renderCalendar();
+                    
+                } catch (error) {
+                    createNewCalendar();
+                }
+            } else {
+                // Cargar calendario existente o crear nuevo
+                calendarId = localStorage.getItem('villa_calendar_id');
+                
+                if (calendarId) {
+                    await loadFromStorage();
+                } else {
+                    createNewCalendar();
+                }
+            }
+            
+            // Actualizar URL automáticamente
+            updateURLAutomatically();
+            updateSyncIndicator();
+        }
+
+        // Crear nuevo calendario
+        function createNewCalendar() {
+            calendarId = 'villa_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+            reservations = [];
+            
+            localStorage.setItem('villa_calendar_id', calendarId);
+            saveToStorage();
+        }
+
+        // Cargar desde almacenamiento local
+        async function loadFromStorage() {
+            try {
+                const data = localStorage.getItem('villa_data_' + calendarId);
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    reservations = parsed.reservations || [];
+                    renderCalendar();
+                    lastSync = new Date(parsed.lastModified || 0).getTime();
+                } else {
+                    reservations = [];
+                }
+            } catch (error) {
+                reservations = [];
+            }
+        }
+
+        // Guardar en almacenamiento y sincronizar automáticamente
+        async function saveToStorage() {
+            try {
+                const data = {
+                    id: calendarId,
+                    reservations: reservations,
+                    lastModified: new Date().toISOString()
+                };
+
+                localStorage.setItem('villa_data_' + calendarId, JSON.stringify(data));
+                
+                // Actualizar URL automáticamente
+                updateURLAutomatically();
+                
+                lastSync = Date.now();
+                updateSyncIndicator();
+                
+            } catch (error) {
+                // Error al sincronizar - continuar silenciosamente
+            }
+        }
+
+        // Actualizar URL automáticamente con datos
+        function updateURLAutomatically() {
+            try {
+                const data = {
+                    id: calendarId,
+                    reservations: reservations,
+                    updated: new Date().toISOString()
+                };
+                
+                const encoded = btoa(JSON.stringify(data));
+                const newUrl = window.location.origin + window.location.pathname + '?data=' + encoded;
+                
+                // Actualizar URL sin recargar la página
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState(null, '', newUrl);
+                }
+                
+            } catch (error) {
+                // Falló pero no mostrar error
+            }
+        }
+
+        // Sincronización automática cada 5 segundos
+        async function autoSync() {
+            try {
+                // Verificar cambios desde otros dispositivos
+                const currentData = localStorage.getItem('villa_data_' + calendarId);
+                if (currentData) {
+                    const parsed = JSON.parse(currentData);
+                    const serverTime = new Date(parsed.lastModified).getTime();
+                    
+                    if (serverTime > lastSync) {
+                        const oldReservations = JSON.stringify(reservations);
+                        
+                        reservations = parsed.reservations || [];
+                        
+                        if (JSON.stringify(reservations) !== oldReservations) {
+                            renderCalendar();
+                            
+                            // Vibrar si está disponible
+                            if (navigator.vibrate) {
+                                navigator.vibrate([200, 100, 200]);
+                            }
+                        }
+                        
+                        lastSync = serverTime;
+                        updateSyncIndicator();
+                    }
+                }
+                
+                // Verificar si la URL cambió (enlace actualizado compartido)
+                const urlParams = new URLSearchParams(window.location.search);
+                const urlData = urlParams.get('data');
+                
+                if (urlData && urlData !== lastUrlData) {
+                    try {
+                        const decoded = atob(urlData);
+                        const data = JSON.parse(decoded);
+                        
+                        if (JSON.stringify(data.reservations) !== JSON.stringify(reservations)) {
+                            reservations = data.reservations || [];
+                            renderCalendar();
+                            
+                            // Guardar localmente también
+                            const localData = {
+                                id: data.id,
+                                reservations: reservations,
+                                lastModified: new Date().toISOString()
+                            };
+                            localStorage.setItem('villa_data_' + calendarId, JSON.stringify(localData));
+                            lastSync = Date.now();
+                        }
+                        
+                        lastUrlData = urlData;
+                    } catch (e) {
+                        // Error procesando URL - continuar silenciosamente
+                    }
+                }
+                
+            } catch (error) {
+                // Error en auto-sync - continuar silenciosamente
+            }
+        }
+
+        let lastUrlData = null;
+
+        // Mostrar estado de sincronización
+        function showSyncStatus(message, isError = false) {
+            // Función deshabilitada para evitar mensajes molestos
+        }
+
+        // Obtener parámetro de URL
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // Actualizar indicador de sincronización
+        function updateSyncIndicator() {
+            const indicator = document.getElementById('syncIndicator');
+            const now = new Date();
+            indicator.textContent = '☁️ ' + now.toLocaleTimeString().substr(0, 5);
+        }
+
+        // Mostrar estado de sincronización
+        function showSyncStatus(message, isError = false) {
+            const status = document.getElementById('syncStatus');
+            status.textContent = message;
+            status.className = 'sync-status show' + (isError ? ' error' : ' success');
+            
+            setTimeout(() => {
+                status.classList.remove('show');
+            }, 3000);
+        }
+
+        // Cambiar mes
+        function changeMonth(direction) {
+            currentDate.setMonth(currentDate.getMonth() + direction);
+            renderCalendar();
+        }
+
+        // Renderizar calendario
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const today = new Date();
+            
+            document.getElementById('monthTitle').textContent = `${monthNames[month]} ${year}`;
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            const container = document.getElementById('calendarDays');
+            container.innerHTML = '';
+            
+            // Espacios vacíos
+            for (let i = 0; i < firstDay; i++) {
+                container.appendChild(document.createElement('div'));
+            }
+            
+            // Días del mes
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'day';
+                
+                if (year === today.getFullYear() && 
+                    month === today.getMonth() && 
+                    day === today.getDate()) {
+                    dayDiv.classList.add('today');
+                }
+                
+                const numberDiv = document.createElement('div');
+                numberDiv.className = 'day-number';
+                numberDiv.textContent = day;
+                dayDiv.appendChild(numberDiv);
+                
+                const dateStr = formatDate(year, month, day);
+                const dayRes = reservations.filter(r => dateStr >= r.start && dateStr <= r.end);
+                
+                if (dayRes.length > 0) {
+                    dayDiv.classList.add('has-reservation');
+                    const indicator = document.createElement('div');
+                    indicator.className = 'res-indicator';
+                    indicator.textContent = dayRes[0].name.substring(0, 10);
+                    dayDiv.appendChild(indicator);
+                    
+                    dayDiv.onclick = function() {
+                        openEditModal(dayRes[0].id);
+                    };
+                }
+                
+                container.appendChild(dayDiv);
+            }
+            
+            renderList();
+        }
+
+        // Renderizar lista
+        function renderList() {
+            const container = document.getElementById('reservationList');
+            const today = formatDate(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+            
+            const upcoming = reservations
+                .filter(r => r.end >= today)
+                .sort((a, b) => a.start.localeCompare(b.start))
+                .slice(0, 5);
+            
+            if (upcoming.length === 0) {
+                container.innerHTML = '<div class="no-reservations">No hay próximas reservas</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            upcoming.forEach(r => {
+                const item = document.createElement('div');
+                item.className = 'reservation-item';
+                item.innerHTML = `
+                    <div class="reservation-content">
+                        <div class="reservation-name">${r.name}</div>
+                        <div class="reservation-dates">${formatDisplay(r.start)} - ${formatDisplay(r.end)}</div>
+                    </div>
+                `;
+                item.onclick = function() {
+                    openEditModal(r.id);
+                };
+                container.appendChild(item);
+            });
+        }
+
+        // Formatear fecha
+        function formatDate(year, month, day) {
+            return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+
+        function formatDisplay(dateStr) {
+            const parts = dateStr.split('-');
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+
+        // Modals
+        function openNewModal() {
+            document.getElementById('modalTitle').textContent = 'Nueva Reserva';
+            document.getElementById('inputName').value = '';
+            document.getElementById('inputStart').value = '';
+            document.getElementById('inputEnd').value = '';
+            document.getElementById('deleteBtn').style.display = 'none';
+            document.getElementById('modal').classList.add('show');
+            editingId = null;
+        }
+
+        function openEditModal(id) {
+            const r = reservations.find(res => res.id === id);
+            if (!r) return;
+            
+            document.getElementById('modalTitle').textContent = 'Editar Reserva';
+            document.getElementById('inputName').value = r.name;
+            document.getElementById('inputStart').value = r.start;
+            document.getElementById('inputEnd').value = r.end;
+            document.getElementById('deleteBtn').style.display = 'block';
+            document.getElementById('modal').classList.add('show');
+            editingId = id;
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('show');
+            editingId = null;
+        }
+
+        // Guardar reserva con sincronización automática
+        async function saveReservation() {
+            const name = document.getElementById('inputName').value.trim();
+            const start = document.getElementById('inputStart').value;
+            const end = document.getElementById('inputEnd').value;
+            
+            if (!name || !start || !end) {
+                alert('Complete todos los campos');
+                return;
+            }
+            
+            if (start > end) {
+                alert('La fecha final debe ser posterior');
+                return;
+            }
+            
+            if (editingId) {
+                reservations = reservations.filter(r => r.id !== editingId);
+            }
+            
+            reservations.push({
+                id: editingId || Date.now(),
+                name: name,
+                start: start,
+                end: end
+            });
+            
+            await saveToStorage();
+            renderCalendar();
+            closeModal();
+        }
+
+        // Eliminar reserva con sincronización automática
+        async function deleteReservation() {
+            if (!editingId) return;
+            
+            if (confirm('¿Eliminar esta reserva?')) {
+                reservations = reservations.filter(r => r.id !== editingId);
+                await saveToStorage();
+                renderCalendar();
+                closeModal();
+            }
+        }
+
+        // Compartir
+        function openShareModal() {
+            const shareUrl = window.location.origin + window.location.pathname + '?id=' + calendarId;
+            document.getElementById('shareUrl').textContent = shareUrl;
+            document.getElementById('shareModal').classList.add('show');
+        }
+
+        function closeShareModal() {
+            document.getElementById('shareModal').classList.remove('show');
+        }
+
+        async function copyShareLink() {
+            const url = document.getElementById('shareUrl').textContent;
+            try {
+                await navigator.clipboard.writeText(url);
+                showSyncStatus('📋 ¡Enlace copiado al portapapeles!', false);
+            } catch (err) {
+                // Fallback para navegadores que no soportan clipboard API
+                const textArea = document.createElement('textarea');
+                textArea.value = url;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showSyncStatus('📋 ¡Enlace copiado!', false);
+            }
+        }
+
+        function shareWhatsApp() {
+            const url = document.getElementById('shareUrl').textContent;
+            const message = encodeURIComponent(`🏔️ Casa Villa La Angostura - Calendario compartido: ${url}`);
+            window.open(`https://wa.me/?text=${message}`, '_blank');
+        }
+
+        // Click fuera del modal
+        window.onclick = function(e) {
+            if (e.target.id === 'modal') {
+                closeModal();
+            }
+            if (e.target.id === 'shareModal') {
+                closeShareModal();
+            }
+        };
+    </script>
+</body>
+</html>
